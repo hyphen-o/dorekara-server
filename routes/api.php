@@ -18,3 +18,9 @@ use App\Http\Controllers\UserController;
 Route::post('/register', [UserController::class, 'register']);
 
 Route::post('/login', [UserController::class, 'login']);
+
+Route::delete('/destroy/{id}', [UserController::class, 'destroy']);
+
+Route::get('/image/{id}', [UserController::class, 'getImage']);
+
+Route::post('image/{id}', [UserController::class, 'uploadImage']);
