@@ -148,6 +148,7 @@ class SongController extends Controller
                 ]
             ], 201);
         } catch(Exception $error) {
+            DB::rollBack();
             return response($error, 500);
         }
     }
@@ -165,7 +166,6 @@ class SongController extends Controller
                 ]
             ], 201);
         } catch(Exception $error) {
-            DB::rollBack();
             return response($error, 500);
         }
     }
