@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SongController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ArtistController;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,3 +37,9 @@ Route::get('category/{user_id}/all',      [CategoryController::class, 'getAll'])
 Route::get('category/{id}',               [CategoryController::class, 'getOne']) ->where('id', '[0-9]+');
 Route::post('category/{user_id}/create',  [CategoryController::class, 'create']) ->where('user_id', '[0-9]+');
 Route::delete('category/{id}/destroy',    [CategoryController::class, 'destroy'])->where('id', '[0-9]+');
+
+//アーティスト
+Route::get('artist/{user_id}/all',        [ArtistController::class, 'getAll'])   ->where('user_id', '[0-9]+');
+Route::get('artist/{id}/',                [ArtistController::class, 'getOne'])   ->where('id', '[0-9]+');
+Route::post('artist/{user_id}/create',    [ArtistController::class, 'create'])   ->where('user_id', '[0-9]+');
+Route::delete('artist/{id}/destroy',      [ArtistController::class, 'destroy'])  ->where('id', '[0-9]+');
