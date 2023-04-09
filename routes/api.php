@@ -17,16 +17,17 @@ use App\Http\Controllers\SongController;
 */
 
 //ユーザ
-Route::post('/register',           [UserController::class, 'register']);
-Route::post('/login',              [UserController::class, 'login']);
-Route::delete('/destroy/{id}',     [UserController::class, 'destroy']);
-Route::get('/image/{id}',          [UserController::class, 'getImage']);
-Route::post('image/{id}',          [UserController::class, 'uploadImage']);
+Route::post('/register',              [UserController::class, 'register']);
+Route::post('/login',                 [UserController::class, 'login']);
+Route::delete('/destroy/{id}',        [UserController::class, 'destroy']);
+Route::get('/image/{id}',             [UserController::class, 'getImage']);
+Route::post('image/{id}',             [UserController::class, 'uploadImage']);
 
 //曲
-Route::get('/song/all',            [SongController::class, 'getAll']);
-Route::get('/song/{id}',           [SongController::class, 'getOne'])   ->where('id', '[0-9]+');
-Route::post('/song/create',        [SongController::class, 'create']);
-Route::put('song/{id}/edit',       [SongController::class, 'edit'])     ->where('id', '[0-9]+');
-Route::delete('song/{id}/destroy', [SongController::class, 'destroy'])  ->where('id', '[0-9]+');
+Route::get('/song/{user_id}/all',     [SongController::class, 'getAll'])   ->where('id', '[0-9]+');
+Route::get('/song/{id}',              [SongController::class, 'getOne'])   ->where('id', '[0-9]+');
+Route::post('/song/{user_id}/create', [SongController::class, 'create']);
+Route::put('song/{id}/edit',          [SongController::class, 'edit'])     ->where('id', '[0-9]+');
+Route::delete('song/{id}/destroy',    [SongController::class, 'destroy'])  ->where('id', '[0-9]+');
+
 
