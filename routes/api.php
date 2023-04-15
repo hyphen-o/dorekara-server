@@ -46,7 +46,7 @@ Route::post('artist/{user_id}/create',        [ArtistController::class, 'create'
 Route::delete('artist/{id}/destroy',          [ArtistController::class, 'destroy'])   ->where('id', '[0-9]+');
 
 //履歴
-Route::get('history/{user_id}/all',           [HistoryController::class, 'getAll'])   ->where('user_id', '[0-9]+');
-Route::get('history/{session_id}',            [HistoryController::class, 'getOne'])   ->where('session_id', '[0-9]+');
+Route::get('history/{user_id}/all',           [HistoryController::class, 'getDates']) ->where('user_id', '[0-9]+');
+Route::get('history/{session_id}',            [HistoryController::class, 'getSongs']) ->where('session_id', '[0-9]+');
 Route::post('history/{user_id}/create',       [HistoryController::class, 'create'])   ->where('user_id', '[0-9]+');
-Route::delete('history/{session_id}/destroy', [HistoryController::class, 'delete'])   ->where('session_id', '[0-9]+');
+Route::delete('history/{session_id}/destroy', [HistoryController::class, 'destroy'])  ->where('session_id', '[0-9]+');
