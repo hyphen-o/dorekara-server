@@ -19,6 +19,9 @@ return new class extends Migration
                   ->on('users')
                   ->onDelete('cascade');
             $table->unsignedBigInteger('song_id');
+            $table->foreign('song_id')
+                  ->references('id')
+                  ->on('songs');
             $table->unsignedBigInteger('session_id');
             $table->timestamps();
         });
