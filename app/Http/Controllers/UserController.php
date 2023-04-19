@@ -4,18 +4,21 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
     //ユーザ登録
     public function register(Request $req) {
         try {
+            //トランザクション開始
+            DB::beginTransaction();
+
             $user = new User();
             $user->name = $req->name;
-            //パスワードの暗号化
-            $user->password = Crypt::encryptString($req->password);
             $user->image_url = "default_url.png";
 
             //既にユーザがいるかの確認
@@ -27,8 +30,15 @@ class UserController extends Controller
                     ]
                 ], 401);
             }
-
             $user->save();
+
+            //パスワードの暗号化
+            $auth = new Auth();
+            $auth->password = Crypt::encryptString($req->password);
+            $auth->user_id = $user->id;
+
+            $auth->save();
+            DB::commit();
 
             return response()->json([
                 "name" => $user->name,
@@ -36,6 +46,7 @@ class UserController extends Controller
             ], 201);
 
         } catch (Exception $error) {
+            DB::rollBack();
             return response($error, 500);
         }
     }
@@ -55,7 +66,8 @@ class UserController extends Controller
             }
 
             //パスワードの復号
-            $decryptedPassword = Crypt::decryptString($user->password);
+            $auth = Auth::where('user_id', $user->id)->first();
+            $decryptedPassword = Crypt::decryptString($auth->password);
             if($req->password != $decryptedPassword) {
                 return response()->json([
                     "error" => [
@@ -81,7 +93,12 @@ class UserController extends Controller
             $user = User::find($id);
             if($user) {
                 $user->delete();
-                return response(201);
+                return response()->json([
+                    "success" => [
+                        "param" => "delete",
+                        "msg" => "曲を削除しました",
+                    ]
+                ]);
             }
         } catch(Exception $error) {
             return response($error, 500);
