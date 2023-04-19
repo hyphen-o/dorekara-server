@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsTomany;
+use App\Models\Artist;
 
 class User extends Authenticatable
 {
@@ -14,4 +16,7 @@ class User extends Authenticatable
 
     public $timestamps = false;
 
+    public function artists(): BelongsToMany {
+        return $this->belongsToMany(Artist::class);
+    }
 }

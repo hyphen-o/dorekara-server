@@ -4,13 +4,17 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Artist;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class ArtistController extends Controller
 {
     //ユーザの作成したアーティストを全て取得
     public function getAll($user_id) {
         try {
-            $user_artists = Artist::where('user_id', $user_id)->get();
+
+            $user = User::find($user_id);
+            $user_artists = $user->artists()->get();
 
             return response()->json([
                 $user_artists,
@@ -36,20 +40,23 @@ class ArtistController extends Controller
     //アーティストを作成
     public function create($user_id, Request $req) {
         try {
+            //トランザクション開始
+            DB::beginTransaction();
+
             //既にアーティストが存在するかの確認
             if(Artist::where("name", $req->name)->first()) {
-                return response()->json([
-                    "error" => [
-                        "param" => "name",
-                        "msg" => "既にアーティストが存在します.",
-                    ]
-                ], 401);
+                $artist = Artist::where("name", $req->name)->first();
+            } else {
+                $artist = new Artist();
+                $artist->name = $req->name;
+                $artist->save();
             }
 
-            $artist = new Artist();
-            $artist->name = $req->name;
-            $artist->user_id = $user_id;
-            $artist->save();
+            $user = User::find($user_id);
+            $user->artists()->syncWithoutDetaching($artist->id);
+            $user->save();
+
+            DB::commit();
 
             return response()->json([
                 "success" => [
@@ -58,15 +65,16 @@ class ArtistController extends Controller
                 ]
             ], 201);
         } catch(Exception $error) {
+            DB::rollBack();
             return response($error, 500);
         }
     }
 
     //アーティストを削除
-    public function destroy($id) {
+    public function destroy(Request $req) {
         try {
-            $artist = Artist::find($id);
-            $artist->delete();
+            $user = User::find($req->user_id);
+            $user->artists()->delete($req->artist_id);
 
             return response()->json([
                 "success" => [

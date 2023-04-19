@@ -34,16 +34,16 @@ Route::put('song/{id}/edit',                  [SongController::class, 'edit'])  
 Route::delete('song/{id}/destroy',            [SongController::class, 'destroy'])     ->where('id', '[0-9]+');
 
 //カテゴリ
-Route::get('category/{user_id}/all',          [CategoryController::class, 'getAll'])  ->where('user_id', '[0-9]+');
-Route::get('category/{id}',                   [CategoryController::class, 'getOne'])  ->where('id', '[0-9]+');
-Route::post('category/{user_id}/create',      [CategoryController::class, 'create'])  ->where('user_id', '[0-9]+');
-Route::delete('category/{id}/destroy',        [CategoryController::class, 'destroy']) ->where('id', '[0-9]+');
+// Route::get('category/{user_id}/all',          [CategoryController::class, 'getAll'])  ->where('user_id', '[0-9]+');
+// Route::get('category/{id}',                   [CategoryController::class, 'getOne'])  ->where('id', '[0-9]+');
+// Route::post('category/{user_id}/create',      [CategoryController::class, 'create'])  ->where('user_id', '[0-9]+');
+// Route::delete('category/{id}/destroy',        [CategoryController::class, 'destroy']) ->where('id', '[0-9]+');
 
 //アーティスト
 Route::get('artist/{user_id}/all',            [ArtistController::class, 'getAll'])    ->where('user_id', '[0-9]+');
 Route::get('artist/{id}/',                    [ArtistController::class, 'getOne'])    ->where('id', '[0-9]+');
 Route::post('artist/{user_id}/create',        [ArtistController::class, 'create'])    ->where('user_id', '[0-9]+');
-Route::delete('artist/{id}/destroy',          [ArtistController::class, 'destroy'])   ->where('id', '[0-9]+');
+Route::delete('artist/destroy',               [ArtistController::class, 'destroy']);
 
 //履歴
 Route::get('history/{user_id}/all',           [HistoryController::class, 'getDates']) ->where('user_id', '[0-9]+');
