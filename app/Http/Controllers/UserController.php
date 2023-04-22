@@ -88,9 +88,9 @@ class UserController extends Controller
     }
 
     //ユーザ削除
-    public function destroy($id) {
+    public function destroy(Request $req) {
         try {
-            $user = User::find($id);
+            $user = User::find($req->user_id);
             if($user) {
                 $user->delete();
                 return response()->json([
