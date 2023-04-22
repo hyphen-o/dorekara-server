@@ -22,7 +22,7 @@ return new class extends Migration
             $table->foreign('song_id')
                   ->references('id')
                   ->on('songs');
-            $table->unsignedBigInteger('session_id');
+            $table->string('date');
             $table->timestamps();
         });
     }
