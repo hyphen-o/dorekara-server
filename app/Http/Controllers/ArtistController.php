@@ -14,7 +14,7 @@ class ArtistController extends Controller
         try {
 
             $user = User::find($user_id);
-            $user_artists = $user->artists()->get();
+            $user_artists = $user->artists()->latest()->get();
 
             return response()->json([
                 $user_artists,
@@ -74,7 +74,7 @@ class ArtistController extends Controller
     public function destroy(Request $req) {
         try {
             $user = User::find($req->user_id);
-            $user->artists()->delete($req->artist_id);
+            $user->artists()->detach($req->artist_id);
 
             return response()->json([
                 "success" => [
