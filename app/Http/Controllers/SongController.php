@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\User;
 use App\Models\Song;
 use App\Models\Artist;
 use App\Models\Category;
@@ -13,7 +14,8 @@ class SongController extends Controller
     //ユーザの曲を全て取得
     public function getAll($user_id) {
         try {
-            $user_songs = Song::where('user_id', $user_id)->latest()->get();
+            $user = User::find($user_id);
+            $user_songs = $user->songs()->latest()->get();
 
             return response()->json([
                 $user_songs,
@@ -39,47 +41,21 @@ class SongController extends Controller
     //曲を作成　
     public function create($user_id, Request $req) {
         try {
-            //既に曲名が存在するかの確認
-            if(Song::where("name", $req->name)->first()) {
-                return response()->json([
-                    "error" => [
-                        "param" => "name",
-                        "msg" => "既に曲が存在します.",
-                    ]
-                ], 401);
-            }
-
             //トランザクション開始
             DB::beginTransaction();
 
-            $song = new Song();
-            $song->name = $req->name;
-            $song->key = $req->key;
-            $song->user_id = $user_id;
-
-            //新たにアーティストを作成する場合，artistテーブルにデータを追加する
-            if($req->new_artistName) {
-                $artist = new Artist();
-                $artist->name = $req->new_artistName;
-                $artist->user_id = $user_id;
-                $artist->save();
-                $song->artist_id = $artist->id;
+            if(Song::where([["name", $req->name], ["artist_id", $req->artist_id], ["key", $req->key]])->first()) {
+                $song = Song::where([["name", $req->name], ["artist_id", $req->artist_id], ["key", $req->key]])->first();
             } else {
+                $song = new Song();
+                $song->name = $req->name;
                 $song->artist_id = $req->artist_id;
+                $song->key = $req->key;
+                $song->save();
             }
 
-            //新たにカテゴリを作成する場合，categoryテーブルにデータを追加する
-            if($req->new_categoryName) {
-                $category = new Category();
-                $category->name = $req->new_categoryName;
-                $category->user_id = $user_id;
-                $category->save();
-                $song->category_id = $category->id;
-            } else {
-                $song->category_id = $req->category_id;
-            }
-
-            $song->save();
+            $user = User::find($user_id);
+            $user->songs()->syncWithoutDetaching($song->id);
 
             DB::commit();
 
@@ -96,48 +72,27 @@ class SongController extends Controller
     }
 
     //曲を編集
-    public function edit($id, Request $req) {
+    public function edit($user_id, Request $req) {
         try {
-            //既に自身以外に同じ曲名が存在するかの確認
-            if(Song::where([["id", '!=', $id],["name", $req->name]])->first()) {
-                return response()->json([
-                    "error" => [
-                        "param" => "name",
-                        "msg" => "既に曲が存在します.",
-                    ]
-                ], 401);
-            }
-
             //トランザクション開始
             DB::beginTransaction();
 
-            $song = Song::find($id);
-            $song->name = $req->name;
-            $song->key = $req->key;
+            $user = User::find($req->user_id);
+            $user->songs()->detach($req->song_id);
 
-            //新たにアーティストを作成する場合，artistテーブルにデータを追加する
-            if($req->new_artistName) {
-                $artist = new Artist();
-                $artist->name = $req->new_artistName;
-                $artist->user_id = $song->user_id;
-                $artist->save();
-                $song->artist_id = $artist->id;
+            //既に自身以外に同じ曲名が存在するかの確認
+            if(Song::where([["name", $req->name], ["artist_id", $req->artist_id], ["key", $req->key]])->first()) {
+                $song = Song::where([["name", $req->name], ["artist_id", $req->artist_id], ["key", $req->key]])->first();
             } else {
+                $song = new Song();
+                $song->name = $req->name;
                 $song->artist_id = $req->artist_id;
+                $song->key = $req->key;
+                $song->save();
             }
 
-            //新たにカテゴリを作成する場合，categoryテーブルにデータを追加する
-            if($req->new_categoryName) {
-                $category = new Category();
-                $category->name = $req->new_categoryName;
-                $category->user_id = $song->user_id;
-                $category->save();
-                $song->category_id = $category->id;
-            } else {
-                $song->category_id = $req->category_id;
-            }
-
-            $song->update();
+            $user = User::find($user_id);
+            $user->songs()->syncWithoutDetaching($song->id);
 
             DB::commit();
 
@@ -154,10 +109,10 @@ class SongController extends Controller
     }
 
     //曲を削除
-    public function destroy($id) {
+    public function destroy(Request $req) {
         try {
-            $song = Song::find($id);
-            $song->delete();
+            $user = User::find($req->user_id);
+            $user->songs()->detach($req->song_id);
 
             return response()->json([
                 "success" => [
