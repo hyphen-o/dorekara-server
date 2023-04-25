@@ -4,10 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
-use App\Models\Auth;
+use App\Models\Authorization;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
+
 
 class UserController extends Controller
 {
@@ -33,21 +37,26 @@ class UserController extends Controller
             $user->save();
 
             //パスワードの暗号化
-            $auth = new Auth();
+            $auth = new Authorization();
             $auth->password = Crypt::encryptString($req->password);
             $auth->user_id = $user->id;
 
             $auth->save();
             DB::commit();
 
-            return response()->json([
-                "name" => $user->name,
-                "id" => $user->id,
-            ], 201);
+            $token = auth('api')->login($user);
+
+            return $this->respondWithToken($token, $user);
 
         } catch (Exception $error) {
             DB::rollBack();
-            return response($error, 500);
+            return response()->json([
+                "error" => [
+                    "param" => "error",
+                    "msg" => "エラーが発生しました.",
+                    "body" => $error,
+                ]
+            ], 500);
         }
     }
 
@@ -56,6 +65,7 @@ class UserController extends Controller
         try {
             $user = User::where('name', $req->name)->first();
 
+            //ユーザが存在するかの確認
             if(!$user) {
                 return response()->json([
                     "error" => [
@@ -66,7 +76,7 @@ class UserController extends Controller
             }
 
             //パスワードの復号
-            $auth = Auth::where('user_id', $user->id)->first();
+            $auth = Authorization::where('user_id', $user->id)->first();
             $decryptedPassword = Crypt::decryptString($auth->password);
             if($req->password != $decryptedPassword) {
                 return response()->json([
@@ -77,14 +87,32 @@ class UserController extends Controller
                 ], 401);
             }
 
-            return response()->json([
-                "name" => $user->name,
-                "id" => $user->id,
-            ], 201);
+            $token = auth('api')->login($user);
+
+            return $this->respondWithToken($token, $user);
 
         } catch(Exception $error) {
-            return response($error, 500);
+            return response()->json([
+                "error" => [
+                    "param" => "error",
+                    "msg" => "エラーが発生しました.",
+                    "body" => $error,
+                ]
+            ], 500);
         }
+    }
+
+    //トークン,ユーザ情報を整形
+    protected function respondWithToken($token, $user)
+    {
+        return response()->json([
+            'user' => $user,
+            'authorization' => [
+                'token' => $token,
+                'type' => 'bearer',
+                'expires_in' => auth()->factory()->getTTL() * 60
+            ]
+        ], 201);
     }
 
     //ユーザ削除
@@ -101,7 +129,13 @@ class UserController extends Controller
                 ]);
             }
         } catch(Exception $error) {
-            return response($error, 500);
+            return response()->json([
+                "error" => [
+                    "param" => "error",
+                    "msg" => "エラーが発生しました.",
+                    "body" => $error,
+                ]
+            ], 500);
         }
     }
 
@@ -111,7 +145,13 @@ class UserController extends Controller
             $imgPath = User::find($id)->image_url;
             return response()->file(Storage::path('public/user_image/' . $imgPath));
         } catch (Exception $error) {
-            return response($error, 500);
+            return response()->json([
+                "error" => [
+                    "param" => "error",
+                    "msg" => "エラーが発生しました.",
+                    "body" => $error,
+                ]
+            ], 500);
         }
     }
 
@@ -137,7 +177,13 @@ class UserController extends Controller
 
             return response()->file(Storage::path('public/user_image/' . $new_imgPath));
         } catch (Exception $error) {
-            return response($error, 500);
+            return response()->json([
+                "error" => [
+                    "param" => "error",
+                    "msg" => "エラーが発生しました.",
+                    "body" => $error,
+                ]
+            ], 500);
         }
     }
 
