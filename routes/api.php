@@ -24,9 +24,10 @@ use App\Http\Controllers\HistoryController;
 //ユーザ
 Route::post('register',                      [UserController::class, 'register']);
 Route::post('login',                         [UserController::class, 'login']);
+Route::get('me',                             [UserController::class, 'me']);
 Route::delete('destroy/{id}',                [UserController::class, 'destroy'])     ->where('id', '[0-9]+');
 Route::get('image/{id}',                     [UserController::class, 'getImage'])    ->where('id', '[0-9]+');
-Route::post('image/{id}',                     [UserController::class, 'uploadImage']) ->where('id', '[0-9]+');
+Route::post('image/{id}',                    [UserController::class, 'uploadImage']) ->where('id', '[0-9]+');
 
 //曲
 Route::get('song/{user_id}/all',             [SongController::class, 'getAll'])      ->where('user_id', '[0-9]+');
