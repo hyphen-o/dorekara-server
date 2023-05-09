@@ -74,7 +74,7 @@ class ArtistController extends Controller
     public function destroy(Request $req) {
         try {
             $user = User::find($req->user_id);
-            $user->artists()->delete($req->artist_id);
+            $user->artists()->detach($req->artist_id);
 
             return response()->json([
                 "success" => [

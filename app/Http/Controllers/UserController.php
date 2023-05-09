@@ -17,28 +17,30 @@ class UserController extends Controller
 {
     //ユーザ登録
     public function register(Request $req) {
+        $user = new User();
+        $user->name = $req->name;
+        $user->image_url = "default_url.png";
+
+        //既にユーザがいるかの確認
+        if($this->isExistUser($req->name)) {
+            return response()->json([
+                "error" => [
+                    "param" => "name",
+                    "msg" => "既にユーザが存在します.",
+                ]
+            ], 401);
+        }
+
+        //トランザクション開始
+        DB::beginTransaction();
+
         try {
-            //トランザクション開始
-            DB::beginTransaction();
 
-            $user = new User();
-            $user->name = $req->name;
-            $user->image_url = "default_url.png";
-
-            //既にユーザがいるかの確認
-            if(User::where("name", $req->name)->first()) {
-                return response()->json([
-                    "error" => [
-                        "param" => "name",
-                        "msg" => "既にユーザが存在します.",
-                    ]
-                ], 401);
-            }
             $user->save();
 
             //パスワードの暗号化
             $auth = new Authorization();
-            $auth->password = Crypt::encryptString($req->password);
+            $auth->password = $this->encryptPassword($req->password);
             $auth->user_id = $user->id;
 
             $auth->save();
@@ -63,30 +65,16 @@ class UserController extends Controller
     //ユーザログイン
     public function login(Request $req) {
         try {
-            $user = User::where('name', $req->name)->first();
-
-            //ユーザが存在するかの確認
-            if(!$user) {
+            if(!$this->isRegisteredUser($req)) {
                 return response()->json([
                     "error" => [
-                        "param" => "name",
-                        "msg" => "ユーザ名が無効です.",
+                        "param" => "login",
+                        "msg" => "ユーザ名，またはパスワードが無効です．",
                     ]
                 ], 401);
             }
 
-            //パスワードの復号
-            $auth = Authorization::where('user_id', $user->id)->first();
-            $decryptedPassword = Crypt::decryptString($auth->password);
-            if($req->password != $decryptedPassword) {
-                return response()->json([
-                    "error" => [
-                        "param" => "password",
-                        "msg" => "パスワードが無効です.",
-                    ]
-                ], 401);
-            }
-
+            $user = $this->getUser($req->name);
             $token = auth('api')->login($user);
 
             return $this->respondWithToken($token, $user);
@@ -102,17 +90,19 @@ class UserController extends Controller
         }
     }
 
-    //トークン,ユーザ情報を整形
-    protected function respondWithToken($token, $user)
-    {
-        return response()->json([
-            'user' => $user,
-            'authorization' => [
-                'token' => $token,
-                'type' => 'bearer',
-                'expires_in' => auth()->factory()->getTTL() * 60
-            ]
-        ], 201);
+    public function me() {
+        try {
+            $user = JWTAuth::parseToken()->authenticate();
+            return response()->json(compact('user'));
+        } catch(Exception $error) {
+            return response()->json([
+                "error" => [
+                    "param" => "error",
+                    "msg" => "エラーが発生しました.",
+                    "body" => $error,
+                ]
+            ], 500);
+        }
     }
 
     //ユーザ削除
@@ -124,7 +114,7 @@ class UserController extends Controller
                 return response()->json([
                     "success" => [
                         "param" => "delete",
-                        "msg" => "曲を削除しました",
+                        "msg" => "ユーザを削除しました",
                     ]
                 ]);
             }
@@ -185,6 +175,56 @@ class UserController extends Controller
                 ]
             ], 500);
         }
+    }
+
+    //トークン,ユーザ情報を整形
+    protected function respondWithToken($token, $user) {
+        return response()->json([
+            'user' => $user,
+            'authorization' => [
+                'token' => $token,
+                'type' => 'bearer',
+                'expires_in' => auth()->factory()->getTTL() * 60
+            ]
+        ], 201);
+    }
+
+    //ユーザがいるかどうかの確認
+    protected function isExistUser($name) {
+        $user = User::where("name", $name)->first();
+        if($user) return true;
+        else return false;
+    }
+
+    //パスワードの暗号化
+    protected function encryptPassword($password) {
+        return Crypt::encryptString($password.env('SECRET_SOLT', false));
+    }
+
+    //パスワードの復号
+    protected function decryptPassword($password) {
+        return Crypt::decryptString($password);
+    }
+
+    //ユーザを取得
+    protected function getUser($name) {
+        return User::where("name", $name)->first();
+    }
+
+    //登録されたユーザかどうかを確認
+    protected function isRegisteredUser($req) {
+        //ユーザが存在するかの確認
+        if(!$this->isExistUser($req->name)) return false;
+
+        $user = $this->getUser($req->name);
+
+        //パスワードの復号
+        $auth = Authorization::where('user_id', $user->id)->first();
+        $decryptedPassword = $this->decryptPassword($auth->password);
+
+        if($req->password.env('SECRET_SOLT', false) != $decryptedPassword) return false;
+
+        return true;
     }
 
 }
