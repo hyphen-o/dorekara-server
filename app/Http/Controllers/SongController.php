@@ -77,7 +77,7 @@ class SongController extends Controller
             //トランザクション開始
             DB::beginTransaction();
 
-            $user = User::find($req->user_id);
+            $user = User::find($user_id);
             $user->songs()->detach($req->song_id);
 
             //既に自身以外に同じ曲名が存在するかの確認
