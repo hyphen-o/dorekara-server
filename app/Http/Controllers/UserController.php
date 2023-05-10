@@ -106,9 +106,9 @@ class UserController extends Controller
     }
 
     //ユーザ削除
-    public function destroy($id) {
+    public function destroy(Request $req) {
         try {
-            $user = User::find($id);
+            $user = User::find($req->user_id);
             if($user) {
                 $user->delete();
                 return response()->json([
@@ -121,8 +121,8 @@ class UserController extends Controller
         } catch(Exception $error) {
             return response()->json([
                 "error" => [
-                    "param" => "error",
-                    "msg" => "エラーが発生しました.",
+                    "param" => "delete-user-error",
+                    "msg" => "ユーザを削除することができませんでした.",
                     "body" => $error,
                 ]
             ], 500);
@@ -132,13 +132,14 @@ class UserController extends Controller
     //ユーザイメージ取得
     public function getImage($id) {
         try {
-            $imgPath = User::find($id)->image_url;
-            return response()->file(Storage::path('public/user_image/' . $imgPath));
+            $path = User::find($id)->image_url;
+
+            return $path;
         } catch (Exception $error) {
             return response()->json([
                 "error" => [
-                    "param" => "error",
-                    "msg" => "エラーが発生しました.",
+                    "param" => "get-userImage-error",
+                    "msg" => "ユーザのイメージを取得できませんでした.",
                     "body" => $error,
                 ]
             ], 500);
@@ -149,23 +150,13 @@ class UserController extends Controller
     public function uploadImage($id, Request $req) {
         try {
             $upload_file = $req->file('upload_image');
-            if($upload_file) {
-                $new_imgPath = $upload_file->getClientOriginalName();
-            } else {
-                return response()->json([
-                    "error" => [
-                        "param" => "image",
-                        "msg" => "画像の形式が無効です.",
-                    ]
-                ], 401);
-            }
-            $upload_file->storeAs('public/user_image', $new_imgPath);
+            $path = Storage::disk('s3')->putFile('user-image', $upload_file);
 
             $user = User::find($id);
-            $user->image_url = $new_imgPath;
+            $user->image_url = Storage::disk('s3')->url($path);
             $user->save();
 
-            return response()->file(Storage::path('public/user_image/' . $new_imgPath));
+            return Storage::disk('s3')->url($path);
         } catch (Exception $error) {
             return response()->json([
                 "error" => [
