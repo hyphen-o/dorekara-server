@@ -24,6 +24,7 @@ use App\Http\Controllers\HistoryController;
 //ユーザ
 Route::post('register',                       [UserController::class, 'register']);
 Route::post('login',                          [UserController::class, 'login']);
+Route::post('logout',                         [UserController::class, 'logout']);
 Route::get('me',                              [UserController::class, 'me']);
 Route::delete('destroy',                      [UserController::class, 'destroy']);
 Route::get('image/{id}',                      [UserController::class, 'getImage'])    ->where('id', '[0-9]+');
