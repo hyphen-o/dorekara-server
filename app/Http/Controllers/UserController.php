@@ -90,6 +90,28 @@ class UserController extends Controller
         }
     }
 
+    //ユーザログアウト
+    public function logout() {
+        try {
+            //JWTの無効化
+            $user = JWTAuth::parseToken()->invalidate();
+            return response()->json([
+                "success" => [
+                    "param" => "logout",
+                    "msg" => "ログアウトしました",
+                ]
+            ]);
+        } catch (Exception $error) {
+            return response()->json([
+                "error" => [
+                    "param" => "logout-error",
+                    "msg" => "ログアウト中にエラーが発生しました．システム管理者にお問い合わせください．",
+                    "body" => $error,
+                ]
+            ], 500);
+        }
+    }
+
     public function me() {
         try {
             $user = JWTAuth::parseToken()->authenticate();
